@@ -17,7 +17,6 @@ library(readr)
 Load Data
 ```{r}
 foreclosures <- read_csv("//Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures..csv")
-head(foreclosures)
 parcels <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel.csv")
 parcel_point <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel_points.csv")
 ```
@@ -26,17 +25,24 @@ parcel_point <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Proje
 clean data
 ```{r}
 parcels <- separate(parcels, col = PID, into = c("county", "PID_1"), sep = "-")
+
 parcels <- unite(parcels, FULLADDRESS, BLDG_NUM, STREETNAME, sep = " ", remove = TRUE)
+
 foreclosures$FULLADDRESS <- tolower(foreclosures$FULLADDRESS)
+
 parcels$FULLADDRESS <- tolower(parcels$FULLADDRESS)
+
 parcels$SALE_DATE <- mdy_hms(parcels$SALE_DATE)
+
 foreclosures$SHERIFFSAL <- mdy_hms(foreclosures$SHERIFFSAL)
+
 foreclosures_work <- foreclosures %>% separate(col = SHERIFFSAL,into = c("sheriffsal_year", "sheriffsal_month", "sheriffsal_day"), sep = "-")
 
 parcels_clean <- select(parcels, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY, ZIP, OWNER_NAME, HOMESTEAD, TOTAL_TAX, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, Shape_Length, Shape_Area, county, PID_1, USE1_DESC)
 names(parcels)
 
 foreclosures_clean <- select(foreclosures_work, OBJECTID, FULLADDRESS, CITY, sheriffsal_year, sheriffsal_month, sheriffsal_day, FCLS_YR, LIENTYPE, REDEMPEXP, MORTGAGORL, MORGTAGORF, CURRENTMORT, FIRSTBIDAM, FINALBIDAM, LAWFIRMATT, POINT_X, POINT_Y)
+
 foreclosures_clean$REDEMPEXP <- mdy_hms(foreclosures_clean$REDEMPEXP)
 
 ```   
@@ -44,8 +50,10 @@ foreclosures_clean$REDEMPEXP <- mdy_hms(foreclosures_clean$REDEMPEXP)
 Join data
 ```{r}
 parcel_foreclosures <- merge(x = parcels, y = foreclosures_work, by = "FULLADDRESS", all.x = TRUE)
+
 #left join
-join <- parcels_clean %>% left_join(foreclosures_clean, by = c("FULLADDRESS"))
+Join <- parcels_clean %>% left_join(foreclosures_clean, by = c("FULLADDRESS"))
+
 #Clean for left join
 parcel_foreclosures_polygon <- select(join, OBJECTID = OBJECTID.x, PIN, FULLADDRESS, CITY = CITY.x, ZIP, OWNER_NAME, HOMESTEAD, TOTAL_TAX, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, Shape_Length, Shape_Area, county, sheriffsal_year, sheriffsal_month, sheriffsal_day, FCLS_YR, FIRSTBIDAM, FINALBIDAM, POINT_X, POINT_Y, USE1_DESC)
 
@@ -61,12 +69,14 @@ parcel_foreclosures_join %>% mutate(new_cal = SALE_DATE > sheriffsal)
 
 ```  
 
-Cleaning full brooklyn parcel point data
+Cleaning full brooklyn park parcel point data
 ```{r}
 parcel_point <- unite(parcel_point, FULLADDRESS, BLDG_NUM, STREETNAME, sep = " ", remove = TRUE)
+
 parcel_point$FULLADDRESS <- tolower(parcel_point$FULLADDRESS)
+
 parcel_point$SALE_DATE <- mdy_hms(parcel_point$SALE_DATE)
-names(parcel_point)
+
 parcel_point <- select(parcel_point, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY, ZIP, PLAT_NAME, USE1_DESC, OWNER_NAME, TAX_NAME, HOMESTEAD, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, POINT_X, POINT_Y)
 ```
 
@@ -75,9 +85,9 @@ parcel_point <- select(parcel_point, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY
 
 Investigate data 
 ```{r}
-dups <- foreclosures_work %>% group_by(FULLADDRESS, sheriffsal_year) %>% summarise(records = n()) %>% arrange(desc(records)) 
+more_then_one_foreclosure <- foreclosures_work %>% group_by(FULLADDRESS, sheriffsal_year) %>% summarise(records = n()) %>% arrange(desc(records)) 
 
-more_then_once <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
+more_then_one_foreclosure <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
 
 days <- foreclosures_work %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(desc(what_day))
 
