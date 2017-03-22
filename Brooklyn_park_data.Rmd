@@ -1,0 +1,124 @@
+---
+title: "Urban_GIS_project"
+author: "Jeff Kropelnicki"
+date: "2/18/2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+library(readr)
+```
+
+
+Load Data
+```{r}
+foreclosures <- read_csv("//Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures..csv")
+head(foreclosures)
+parcels <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel.csv")
+parcel_point <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel_points.csv")
+```
+
+
+clean data
+```{r}
+parcels <- separate(parcels, col = PID, into = c("county", "PID_1"), sep = "-")
+parcels <- unite(parcels, FULLADDRESS, BLDG_NUM, STREETNAME, sep = " ", remove = TRUE)
+foreclosures$FULLADDRESS <- tolower(foreclosures$FULLADDRESS)
+parcels$FULLADDRESS <- tolower(parcels$FULLADDRESS)
+parcels$SALE_DATE <- mdy_hms(parcels$SALE_DATE)
+foreclosures$SHERIFFSAL <- mdy_hms(foreclosures$SHERIFFSAL)
+foreclosures_work <- foreclosures %>% separate(col = SHERIFFSAL,into = c("sheriffsal_year", "sheriffsal_month", "sheriffsal_day"), sep = "-")
+
+parcels_clean <- select(parcels, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY, ZIP, OWNER_NAME, HOMESTEAD, TOTAL_TAX, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, Shape_Length, Shape_Area, county, PID_1, USE1_DESC)
+names(parcels)
+
+foreclosures_clean <- select(foreclosures_work, OBJECTID, FULLADDRESS, CITY, sheriffsal_year, sheriffsal_month, sheriffsal_day, FCLS_YR, LIENTYPE, REDEMPEXP, MORTGAGORL, MORGTAGORF, CURRENTMORT, FIRSTBIDAM, FINALBIDAM, LAWFIRMATT, POINT_X, POINT_Y)
+foreclosures_clean$REDEMPEXP <- mdy_hms(foreclosures_clean$REDEMPEXP)
+
+```   
+   
+Join data
+```{r}
+parcel_foreclosures <- merge(x = parcels, y = foreclosures_work, by = "FULLADDRESS", all.x = TRUE)
+#left join
+join <- parcels_clean %>% left_join(foreclosures_clean, by = c("FULLADDRESS"))
+#Clean for left join
+parcel_foreclosures_polygon <- select(join, OBJECTID = OBJECTID.x, PIN, FULLADDRESS, CITY = CITY.x, ZIP, OWNER_NAME, HOMESTEAD, TOTAL_TAX, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, Shape_Length, Shape_Area, county, sheriffsal_year, sheriffsal_month, sheriffsal_day, FCLS_YR, FIRSTBIDAM, FINALBIDAM, POINT_X, POINT_Y, USE1_DESC)
+
+#Right join
+parcel_foreclosures_join <- parcels_clean %>% right_join(foreclosures_clean, by = c("FULLADDRESS"))
+
+#Clean for right join
+parcel_foreclosures_join <- parcel_foreclosures_join %>% select(OBJECTID = OBJECTID.x, PIN, FULLADDRESS,YEAR_BUILT,SALE_DATE, SALE_VALUE, sheriffsal_year, sheriffsal_month, sheriffsal_day, FIRSTBIDAM, SCHOOL_DST, FCLS_YR, USE1_DESC, FINALBIDAM, CITY = CITY.x, ZIP, OWNER_NAME, HOMESTEAD, TOTAL_TAX, county, POINT_X, POINT_Y, Shape_Length, Shape_Area)
+
+parcel_foreclosures_join <- parcel_foreclosures_join %>% unite(sheriffsal, sheriffsal_year, sheriffsal_month, sheriffsal_day, sep = "-", remove = FALSE)
+
+parcel_foreclosures_join %>% mutate(new_cal = SALE_DATE > sheriffsal)
+
+```  
+
+Cleaning full brooklyn parcel point data
+```{r}
+parcel_point <- unite(parcel_point, FULLADDRESS, BLDG_NUM, STREETNAME, sep = " ", remove = TRUE)
+parcel_point$FULLADDRESS <- tolower(parcel_point$FULLADDRESS)
+parcel_point$SALE_DATE <- mdy_hms(parcel_point$SALE_DATE)
+names(parcel_point)
+parcel_point <- select(parcel_point, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY, ZIP, PLAT_NAME, USE1_DESC, OWNER_NAME, TAX_NAME, HOMESTEAD, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, POINT_X, POINT_Y)
+```
+
+
+ 
+
+Investigate data 
+```{r}
+dups <- foreclosures_work %>% group_by(FULLADDRESS, sheriffsal_year) %>% summarise(records = n()) %>% arrange(desc(records)) 
+
+more_then_once <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
+
+days <- foreclosures_work %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(desc(what_day))
+
+month <- foreclosures_work %>% group_by(sheriffsal_month) %>% summarise(what_month = n()) %>% arrange(sheriffsal_month) 
+
+year <- foreclosures_work %>% group_by(FCLS_YR) %>% summarise(what_year = n()) %>% arrange(desc(what_year))
+
+plot(days)
+plot(year)
+plot(month)
+plot(month_year)
+```
+
+
+Investigate data Number Of Foreclosures Per Month By Year   
+
+```{r}
+number_per_month_and_year <- foreclosures_work %>% group_by(sheriffsal_year, sheriffsal_month) %>% summarize(count = n())
+
+cols<-brewer.pal(n=12,name="Set3")
+
+plot(count ~ sheriffsal_month + sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4"), cex = 4, pch = 20)
+legend("topright", legend = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Oug", "Sep", "Oct", "Nov", "Dec"), fill = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4" ), bty = "n")
+```
+
+Writing to csv
+
+```{r}
+write.csv(parcel_point, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel_point.csv")
+
+write.csv(foreclosures_clean, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures_data_from_Brooklyn_park_clean.csv")
+
+write.csv(parcel_foreclosures_polygon, file = "/Users/jeffkropelnicki/Desktop/parcel_foreclosures_polygon.csv")
+
+write.csv(month, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/month.csv")
+write.csv(day, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/day.csv")
+write.csv(year, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/year.csv")
+
+write.csv(parcel_foreclosures_point, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel_foreclosures_point.csv")
+
+write.csv(foreclosures_clean, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures_data_from_Brooklyn_park_clean.csv")
+
+write.csv(number_per_month_and_year, file = "/Users/jeffkropelnicki/Desktop/more_then_one_foreclosure.csv")
+```  
