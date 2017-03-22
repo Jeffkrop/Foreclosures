@@ -5,17 +5,18 @@ date: "2/18/2017"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup, include=FALSE, warning=FALSE, message=FALSE}
 library(dplyr)
 library(tidyr)
 library(ggplot2)
 library(lubridate)
 library(readr)
+library(VIM)
 ```
 
 
 Load Data
-```{r}
+```{r, message=FALSE}
 foreclosures <- read_csv("//Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures..csv")
 parcels <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel.csv")
 parcel_point <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel_points.csv")
@@ -80,25 +81,22 @@ parcel_point$SALE_DATE <- mdy_hms(parcel_point$SALE_DATE)
 parcel_point <- select(parcel_point, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY, ZIP, PLAT_NAME, USE1_DESC, OWNER_NAME, TAX_NAME, HOMESTEAD, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, POINT_X, POINT_Y)
 ```
 
-
- 
-
 Investigate data 
 ```{r}
-more_then_one_foreclosure <- foreclosures_work %>% group_by(FULLADDRESS, sheriffsal_year) %>% summarise(records = n()) %>% arrange(desc(records)) 
+more_then_one_foreclosure <- foreclosures_clean %>% group_by(FULLADDRESS, sheriffsal_year) %>% summarise(records = n()) %>% arrange(desc(records)) 
 
-more_then_one_foreclosure <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
+more_then_one_foreclosure <- foreclosures_clean %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
 
-days <- foreclosures_work %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(desc(what_day))
+days <- foreclosures_clean %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(sheriffsal_day)
 
-month <- foreclosures_work %>% group_by(sheriffsal_month) %>% summarise(what_month = n()) %>% arrange(sheriffsal_month) 
+month <- foreclosures_clean %>% group_by(sheriffsal_month) %>% summarise(what_month = n()) %>% arrange(sheriffsal_month) 
 
-year <- foreclosures_work %>% group_by(FCLS_YR) %>% summarise(what_year = n()) %>% arrange(desc(what_year))
+year <- foreclosures_clean %>% group_by(FCLS_YR) %>% summarise(what_year = n()) %>% arrange(FCLS_YR)
 
-plot(days)
-plot(year)
-plot(month)
-plot(month_year)
+plot(days, type="l", xlab = "Day Of The Month", ylab = "Number of Foreclosures", main = "Total On Each Day Of The Month")
+plot(year, type="l", xlab = "Year", ylab = "Number of Foreclosures", main = "Total Foreclosures Over 2005 to 2016")
+plot(month, type="l", xlab = "month", ylab = "Number of Foreclosures", main = "Total Foreclosures In All Months")
+
 ```
 
 
@@ -107,10 +105,9 @@ Investigate data Number Of Foreclosures Per Month By Year
 ```{r}
 number_per_month_and_year <- foreclosures_work %>% group_by(sheriffsal_year, sheriffsal_month) %>% summarize(count = n())
 
-cols<-brewer.pal(n=12,name="Set3")
-
-plot(count ~ sheriffsal_month + sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4"), cex = 4, pch = 20)
+plot(count ~ sheriffsal_month + sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4"), cex = 4, pch = 21)
 legend("topright", legend = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Oug", "Sep", "Oct", "Nov", "Dec"), fill = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4" ), bty = "n")
+
 ```
 
 Writing to csv
