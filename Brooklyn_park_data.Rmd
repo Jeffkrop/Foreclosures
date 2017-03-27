@@ -89,11 +89,11 @@ more_then_one_foreclosure <- foreclosures_work %>% filter(LIENTYPE == "Mortgage"
 
 more_then_one_foreclosure_count <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
 
-days <- foreclosures_clean %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(sheriffsal_day)
+days <- foreclosures_work %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(sheriffsal_day)
 
-month <- foreclosures_clean %>% group_by(sheriffsal_month) %>% summarise(what_month = n()) %>% arrange(sheriffsal_month) 
+month <- foreclosures_work %>% group_by(sheriffsal_month) %>% summarise(what_month = n()) %>% arrange(sheriffsal_month) 
 
-year <- foreclosures_clean %>% group_by(FCLS_YR) %>% summarise(what_year = n()) %>% arrange(FCLS_YR)
+year <- foreclosures_work %>% group_by(FCLS_YR) %>% summarise(what_year = n()) %>% arrange(FCLS_YR)
 
 plot(days, type="l", xlab = "Day Of The Month", ylab = "Number of Foreclosures", main = "Total On Each Day Of The Month")
 plot(year, type="l", xlab = "Year", ylab = "Number of Foreclosures", main = "Total Foreclosures Over 2005 to 2016")
