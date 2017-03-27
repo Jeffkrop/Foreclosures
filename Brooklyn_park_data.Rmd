@@ -83,9 +83,11 @@ parcel_point <- select(parcel_point, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY
 
 Investigate data 
 ```{r}
-more_then_one_foreclosure <- foreclosures_clean %>% group_by(FULLADDRESS, sheriffsal_year) %>% summarise(records = n()) %>% arrange(desc(records)) 
+unique(foreclosures_work$LIENTYPE)
 
-more_then_one_foreclosure <- foreclosures_clean %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
+more_then_one_foreclosure <- foreclosures_work %>% filter(LIENTYPE == "Mortgage") %>% group_by(FULLADDRESS) %>% summarise(records = n()) %>% arrange(desc(records)) %>% filter(records > 1) %>% filter(FULLADDRESS != "48 address pending")
+
+more_then_one_foreclosure_count <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
 
 days <- foreclosures_clean %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(sheriffsal_day)
 
@@ -97,6 +99,7 @@ plot(days, type="l", xlab = "Day Of The Month", ylab = "Number of Foreclosures",
 plot(year, type="l", xlab = "Year", ylab = "Number of Foreclosures", main = "Total Foreclosures Over 2005 to 2016")
 plot(month, type="l", xlab = "month", ylab = "Number of Foreclosures", main = "Total Foreclosures In All Months")
 
+highbid <- foreclosures_work %>% group_by()
 ```
 
 
@@ -128,4 +131,9 @@ write.csv(parcel_foreclosures_point, file = "/Users/jeffkropelnicki/Desktop/GIS5
 write.csv(foreclosures_clean, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures_data_from_Brooklyn_park_clean.csv")
 
 write.csv(number_per_month_and_year, file = "/Users/jeffkropelnicki/Desktop/more_then_one_foreclosure.csv")
-```  
+
+write.csv(more_then_one_foreclosure, file = "/Users/jeffkropelnicki/Desktop/More_then_onces.csv")
+``` 
+
+
+
