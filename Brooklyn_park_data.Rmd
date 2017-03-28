@@ -12,32 +12,38 @@ library(ggplot2)
 library(lubridate)
 library(readr)
 library(VIM)
+library(lattice)
 ```
 
 
 Load Data
 ```{r, message=FALSE}
-foreclosures <- read_csv("//Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures..csv")
+#Foreclosure data
+foreclosures <- read_csv("//Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures..csv") 
+
+#Parcel polygons from http://www.hennepin.us/your-government/open-government/gis-open-data parcels opened in ArcGIS then exported to .csv. 
 parcels <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel.csv")
+
+#Parcel points from http://www.hennepin.us/your-government/open-government/gis-open-data same as above. 
 parcel_point <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel_points.csv")
 ```
 
 
 clean data
 ```{r}
-parcels <- separate(parcels, col = PID, into = c("county", "PID_1"), sep = "-")
+parcels <- separate(parcels, col = PID, into = c("county", "PID_1"), sep = "-") #sepirates PID 
 
-parcels <- unite(parcels, FULLADDRESS, BLDG_NUM, STREETNAME, sep = " ", remove = TRUE)
+parcels <- unite(parcels, FULLADDRESS, BLDG_NUM, STREETNAME, sep = " ", remove = TRUE) #Combining BLDG_NUM, STREETNAME to FULLADDRESS. 
 
-foreclosures$FULLADDRESS <- tolower(foreclosures$FULLADDRESS)
+foreclosures$FULLADDRESS <- tolower(foreclosures$FULLADDRESS) #Makes FULLADDRESS to lowercase for a join with parcels 
 
-parcels$FULLADDRESS <- tolower(parcels$FULLADDRESS)
+parcels$FULLADDRESS <- tolower(parcels$FULLADDRESS) #Makes FULLADDRESS to lowercase for join with foreclosures
 
-parcels$SALE_DATE <- mdy_hms(parcels$SALE_DATE)
+parcels$SALE_DATE <- mdy_hms(parcels$SALE_DATE) #Sets date to hours minutes sec. 
 
-foreclosures$SHERIFFSAL <- mdy_hms(foreclosures$SHERIFFSAL)
+foreclosures$SHERIFFSAL <- mdy_hms(foreclosures$SHERIFFSAL) #Sets date to hours minutes sec.
 
-foreclosures_work <- foreclosures %>% separate(col = SHERIFFSAL,into = c("sheriffsal_year", "sheriffsal_month", "sheriffsal_day"), sep = "-")
+foreclosures_work <- foreclosures %>% separate(col = SHERIFFSAL,into = c("sheriffsal_year", "sheriffsal_month", "sheriffsal_day"), sep = "-") #separate SALE_DATE to year, month and day. 
 
 parcels_clean <- select(parcels, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY, ZIP, OWNER_NAME, HOMESTEAD, TOTAL_TAX, YEAR_BUILT, SALE_DATE, SALE_VALUE, SCHOOL_DST, Shape_Length, Shape_Area, county, PID_1, USE1_DESC)
 names(parcels)
@@ -70,7 +76,7 @@ parcel_foreclosures_join %>% mutate(new_cal = SALE_DATE > sheriffsal)
 
 ```  
 
-Cleaning full brooklyn park parcel point data
+Cleaning full Brooklyn park parcel point data
 ```{r}
 parcel_point <- unite(parcel_point, FULLADDRESS, BLDG_NUM, STREETNAME, sep = " ", remove = TRUE)
 
@@ -83,48 +89,56 @@ parcel_point <- select(parcel_point, OBJECTID, COUNTY_ID, PIN, FULLADDRESS, CITY
 
 Investigate data 
 ```{r}
-unique(foreclosures_work$LIENTYPE)
+unique(foreclosures_work$LIENTYPE) #Prints unique varibles in the LIENTYPE column. Mortgage, Assessment, Judgment, Association, Execution, Assocation. 
 
-more_then_one_foreclosure <- foreclosures_work %>% filter(LIENTYPE == "Mortgage") %>% group_by(FULLADDRESS) %>% summarise(records = n()) %>% arrange(desc(records)) %>% filter(records > 1) %>% filter(FULLADDRESS != "48 address pending")
+#Homes that have been through more then one foreclosures, LIENTYPE = Mortgage and removes bad point 48 address pending. 
+more_then_one_foreclosure <- foreclosures_work %>% filter(LIENTYPE == "Mortgage") %>% group_by(FULLADDRESS) %>% summarise(records = n()) %>% arrange(desc(records)) %>% filter(records > 1) %>% filter(FULLADDRESS != "48 address pending") 
 
-more_then_one_foreclosure_count <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2)
+#Looking for a count of homes that have been through more then one foreclosures.
+more_then_one_foreclosure_count <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2) #Looking for a count of homes that have been through more then one foreclosures.
 
+#Count the number of foreclosures for each day of the month. 
 days <- foreclosures_work %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(sheriffsal_day)
 
+#Count the number of foreclosures for each month of the year. 
 month <- foreclosures_work %>% group_by(sheriffsal_month) %>% summarise(what_month = n()) %>% arrange(sheriffsal_month) 
 
+#Count the number of foreclosures for each year.
 year <- foreclosures_work %>% group_by(FCLS_YR) %>% summarise(what_year = n()) %>% arrange(FCLS_YR)
 
+
+#Plot the number of foreclosures for each day of the month. 
 plot(days, type="l", xlab = "Day Of The Month", ylab = "Number of Foreclosures", main = "Total On Each Day Of The Month")
+
+#Plot the number of foreclosures for each month of the year. 
 plot(year, type="l", xlab = "Year", ylab = "Number of Foreclosures", main = "Total Foreclosures Over 2005 to 2016")
+
+#Plot the number of foreclosures for each year. 
 plot(month, type="l", xlab = "month", ylab = "Number of Foreclosures", main = "Total Foreclosures In All Months")
 
-highbid <- foreclosures_work %>% group_by()
+
 ```
 
 
 Investigate data Number Of Foreclosures Per Month By Year   
-
 ```{r}
+#Count of the number of foreclosures by month and year. 
 number_per_month_and_year <- foreclosures_work %>% group_by(sheriffsal_year, sheriffsal_month) %>% summarize(count = n())
 
-plot.new()
+#Point plot of number of foreclosures by month per year with legend. 
 plot(count ~ sheriffsal_month + sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4"), cex = 4, pch = 21)
-
 legend("topright", legend = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Oug", "Sep", "Oct", "Nov", "Dec"), fill = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4" ), bty = "n")
 
-library(lsmeans)
-library(lattice)
-
-plot.new()
+#Boxplot using the lattice library. 
 bwplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year")
 
+#Boxplot with base R. 
 boxplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("cyan1"), cex = 1, pch = 21)
 
 ```
 
-Writing to csv
 
+Writing to csv
 ```{r}
 write.csv(parcel_point, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel_point.csv")
 
