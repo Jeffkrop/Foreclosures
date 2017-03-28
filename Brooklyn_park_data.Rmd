@@ -133,8 +133,14 @@ legend("topright", legend = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "
 bwplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year")
 
 #Boxplot with base R. 
+jpeg('/Users/jeffkropelnicki/Desktop/test.jpg', quality = 500, width = 640, height = 640, pointsize = 14)
 boxplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("cyan1"), cex = 1, pch = 21)
+dev.off()
 
+#This code will export this plot to any .jpg file. 
+#jpeg('/Users/jeffkropelnicki/Desktop/test.jpg', quality = 500, width = 640, height = 640, pointsize = 14)
+#boxplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("cyan1"), cex = 1, pch = 21)
+#dev.off()
 ```
 
 
