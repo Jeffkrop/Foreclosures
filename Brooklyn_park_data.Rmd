@@ -108,8 +108,18 @@ Investigate data Number Of Foreclosures Per Month By Year
 ```{r}
 number_per_month_and_year <- foreclosures_work %>% group_by(sheriffsal_year, sheriffsal_month) %>% summarize(count = n())
 
+plot.new()
 plot(count ~ sheriffsal_month + sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4"), cex = 4, pch = 21)
+
 legend("topright", legend = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Oug", "Sep", "Oct", "Nov", "Dec"), fill = c("red", "blue", "cyan1", "chocolate1", "blueviolet", "darkorchid4", "darkslategray", "gray0", "deeppink4", "lawngreen", "cornflowerblue", "bisque4" ), bty = "n")
+
+library(lsmeans)
+library(lattice)
+
+plot.new()
+bwplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year")
+
+boxplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("cyan1"), cex = 1, pch = 21)
 
 ```
 
@@ -130,7 +140,7 @@ write.csv(parcel_foreclosures_point, file = "/Users/jeffkropelnicki/Desktop/GIS5
 
 write.csv(foreclosures_clean, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures_data_from_Brooklyn_park_clean.csv")
 
-write.csv(number_per_month_and_year, file = "/Users/jeffkropelnicki/Desktop/more_then_one_foreclosure.csv")
+write.csv(number_per_month_and_year, file = "/Users/jeffkropelnicki/Desktop/year_and_month.csv")
 
 write.csv(more_then_one_foreclosure, file = "/Users/jeffkropelnicki/Desktop/More_then_onces.csv")
 ``` 
