@@ -38,22 +38,22 @@ year <- foreclosures_work %>% group_by(FCLS_YR) %>% summarise(what_year = n()) %
 Plots for day, month and year.
 
 ``` r
-#Plot the number of foreclosures for each day of the month. 
-plot(days, type="o", xlab = "Day Of The Month", ylab = "Number of Foreclosures", main = "Total On Each Day Of The Month")
+#Months Plot the number of foreclosures for each month of the year. 
+plot(year, type="o", xlab = "Year", ylab = "Number of Foreclosures", main = "Total Foreclosures Over 2005 to 2016")
 ```
 
 ![](Foreclosure_plots_files/figure-markdown_github/unnamed-chunk-3-1.png)
 
 ``` r
-#Plot the number of foreclosures for each month of the year. 
-plot(year, type="o", xlab = "Year", ylab = "Number of Foreclosures", main = "Total Foreclosures Over 2005 to 2016")
+#Years Plot the number of foreclosures for each year. 
+plot(month, type="o", xlab = "month", ylab = "Number of Foreclosures", main = "Total Foreclosures In All Months")
 ```
 
 ![](Foreclosure_plots_files/figure-markdown_github/unnamed-chunk-3-2.png)
 
 ``` r
-#Plot the number of foreclosures for each year. 
-plot(month, type="o", xlab = "month", ylab = "Number of Foreclosures", main = "Total Foreclosures In All Months")
+#Days Plot the number of foreclosures for each day of the month. 
+plot(days, type="o", xlab = "Day Of The Month", ylab = "Number of Foreclosures", main = "Total On Each Day Of The Month")
 ```
 
 ![](Foreclosure_plots_files/figure-markdown_github/unnamed-chunk-3-3.png)
