@@ -94,8 +94,12 @@ unique(foreclosures_work$LIENTYPE) #Prints unique varibles in the LIENTYPE colum
 #Homes that have been through more then one foreclosures, LIENTYPE = Mortgage and removes bad point 48 address pending. 
 more_then_one_foreclosure <- foreclosures_work %>% filter(LIENTYPE == "Mortgage") %>% group_by(FULLADDRESS) %>% summarise(records = n()) %>% arrange(desc(records)) %>% filter(records > 1) %>% filter(FULLADDRESS != "48 address pending") 
 
+#want to see info about this home on its own. 
+row <- foreclosures_work[which(foreclosures_work$FULLADDRESS =="2418 96th ave n"),] 
+
 #Looking for a count of homes that have been through more then one foreclosures.
 more_then_one_foreclosure_count <- foreclosures_work %>% group_by(FULLADDRESS) %>% summarise(number_of_foreclosures = n()) %>% count(number_of_foreclosures >= 2) #Looking for a count of homes that have been through more then one foreclosures.
+
 
 #Count the number of foreclosures for each day of the month. 
 days <- foreclosures_work %>% group_by(sheriffsal_day) %>% summarise(what_day = n()) %>% arrange(sheriffsal_day)
@@ -133,14 +137,26 @@ legend("topright", legend = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "
 bwplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year")
 
 #Boxplot with base R. 
-jpeg('/Users/jeffkropelnicki/Desktop/test.jpg', quality = 500, width = 640, height = 640, pointsize = 14)
-boxplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("cyan1"), cex = 1, pch = 21)
-dev.off()
+boxplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("cyan1"))
+
+
 
 #This code will export this plot to any .jpg file. 
 #jpeg('/Users/jeffkropelnicki/Desktop/test.jpg', quality = 500, width = 640, height = 640, pointsize = 14)
 #boxplot(count ~ sheriffsal_year, data = number_per_month_and_year, main = "Number Of Foreclosures Per Month By Year", ylab = "Number Of Foreclosures", xlab = "Year", col = c("cyan1"), cex = 1, pch = 21)
 #dev.off()
+
+```   
+   
+Looking at the historgam there is something going on in 2009-2010. The mean went up in 2010 over 2009.
+```{r}
+#looking at the plots in the boxplot for 2008, 2009 and 2010 I want to see what is happening in #2009 to get a better understanding about that makes 2009 different. 
+look_2009 <- foreclosures_work %>% group_by(sheriffsal_year, sheriffsal_month) %>% filter(sheriffsal_year == "2009" | sheriffsal_year == "2010") %>% summarise(count = n()) 
+
+look_2009 <- foreclosures_work %>% group_by(sheriffsal_year, sheriffsal_month) %>% filter(sheriffsal_year == "2009" | sheriffsal_year == "2010") %>% summarise(count = n())
+
+
+boxplot(count~ sheriffsal_year, data = look_2009)
 ```
 
 
@@ -162,7 +178,7 @@ write.csv(foreclosures_clean, file = "/Users/jeffkropelnicki/Desktop/GIS5564_Urb
 
 write.csv(number_per_month_and_year, file = "/Users/jeffkropelnicki/Desktop/year_and_month.csv")
 
-write.csv(more_then_one_foreclosure, file = "/Users/jeffkropelnicki/Desktop/More_then_onces.csv")
+write.csv(more_then_one_foreclosure, file = "/Users/jeffkropelnicki/Desktop/More_then_onces_mortgage.csv")
 ``` 
 
 
