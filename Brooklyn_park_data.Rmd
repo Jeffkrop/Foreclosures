@@ -196,8 +196,9 @@ parcels$USE1_DESC[parcels$USE1_DESC %in% Residential] <- "Residential"
 
 foreclosure <- foreclosures_work %>% select(FULLADDRESS, sheriffsal_year, FIRSTBIDAM)
 
-homes_built <-  parcels %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT, Shape_Length, Shape_Area) %>% group_by(YEAR_BUILT) %>% filter(USE1_DESC == "Residential") %>% filter(YEAR_BUILT > 1)
+homes_built <-  parcels %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT, Shape_Length, Shape_Area) %>% group_by(YEAR_BUILT) %>% filter(USE1_DESC == "Residential") %>% filter(YEAR_BUILT > 1) 
   
+summary(homes_built)
 Join <- homes_built %>% right_join(foreclosure, by = c("FULLADDRESS")) %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT, sheriffsal_year, FIRSTBIDAM, Shape_Length, Shape_Area) %>% filter(sheriffsal_year > YEAR_BUILT)
 
 Join$sheriffsal_year <- as.integer(Join$sheriffsal_year)
@@ -226,7 +227,8 @@ summary(homes_after_1990)
 homes_per_year <- homes_built %>% summarise(count = n()) 
 
 homes_per_year_after_1950 <- homes_per_year %>% filter(YEAR_BUILT >= 1950)
-mean(homes_per_year_after_1950$count) # Avg number of homes built after 1950 337.6061
+median(homes_per_year_after_1950$count)
+mean(homes_per_year_after_1950$count) # Avg number of homes built after 1950 338
 
   
   
