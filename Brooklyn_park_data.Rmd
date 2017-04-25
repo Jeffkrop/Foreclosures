@@ -13,6 +13,7 @@ library(lubridate)
 library(readr)
 library(VIM)
 library(lattice)
+library(gridExtra)
 ```
 
 
@@ -20,11 +21,6 @@ Load Data
 ```{r, message=FALSE}
 #Foreclosure data
 foreclosures <- read_csv("//Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures..csv") 
-
-
-a <- read_csv("//Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/foreclosures..csv")
-
-
 
 #Parcel polygons from http://www.hennepin.us/your-government/open-government/gis-open-data parcels opened in ArcGIS then exported to .csv. 
 parcels <- read_csv("/Users/jeffkropelnicki/Desktop/GIS5564_Urban_GIS/Project/parcel.csv")
@@ -188,30 +184,27 @@ write.csv(more_then_one_foreclosure, file = "/Users/jeffkropelnicki/Desktop/More
 
 Look at data based on when the homes were built.   
 ```{r}
-names(parcels)
-unique(parcels$USE1_DESC)
-
 Residential <- c("Vacant Land - Residential", "Residential", "Townhouse", "Residential-Zero Lot Line-DB", "Disabled", "Double Bungalow", "Resd'l Misc & Bed & Breakfast", "Blind", "Condominium", "Disabled Joint Tenancy", "Residential Lakeshore", "Apartment", "Seasonal Residential Rec.", "Triplex", "Housing - Low Income > 3 Units")
+
 parcels$USE1_DESC[parcels$USE1_DESC %in% Residential] <- "Residential"
 
 foreclosure <- foreclosures_work %>% select(FULLADDRESS, sheriffsal_year, FIRSTBIDAM)
 
-homes_built <-  parcels %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT, Shape_Length, Shape_Area) %>% group_by(YEAR_BUILT) %>% filter(USE1_DESC == "Residential") %>% filter(YEAR_BUILT > 1) 
-  
-summary(homes_built)
-Join <- homes_built %>% right_join(foreclosure, by = c("FULLADDRESS")) %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT, sheriffsal_year, FIRSTBIDAM, Shape_Length, Shape_Area) %>% filter(sheriffsal_year > YEAR_BUILT)
 
-Join$sheriffsal_year <- as.integer(Join$sheriffsal_year)
+Join_Year_built <- parcels %>% right_join(foreclosure, by = c("FULLADDRESS")) %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT, sheriffsal_year) %>% filter(sheriffsal_year > YEAR_BUILT)
 
-Join <- Join %>% mutate(owned = sheriffsal_year - YEAR_BUILT) 
+Join_Year_built$sheriffsal_year <- as.integer(Join_Year_built$sheriffsal_year)
+
+Join_Year_built <- Join_Year_built %>% mutate(owned = sheriffsal_year - YEAR_BUILT) 
 
 mean(Join$owned, na.rm = TRUE) #avg number of years a home was built before a foreclosure 28.81 years
 
-homes_1990 <- Join %>% filter(YEAR_BUILT >= 1990)
-homes_before <- Join %>% filter(YEAR_BUILT < 1990)
+homes_greater_1990 <- Join_Year_built %>% filter(YEAR_BUILT >= 1990)
+homes_less_1990 <- Join_Year_built %>% filter(YEAR_BUILT < 1990)
 
-homes_after_1990 <- Join %>% filter(YEAR_BUILT >= 1990) %>% summarise(count = n())
-homes_before_1990 <- Join %>% filter(YEAR_BUILT < 1990 & YEAR_BUILT > 1949) %>% summarise(count = n())
+homes_after_1990 <- Join_Year_built %>% filter(YEAR_BUILT >= 1990) %>% group_by(YEAR_BUILT) %>%  summarise(Number_of_Foreclosures = n()) 
+
+homes_before_1990 <- Join_Year_built %>% filter(YEAR_BUILT < 1990 & YEAR_BUILT > 1967) %>% group_by(YEAR_BUILT) %>% summarise(Number_of_Foreclosures = n())
 
 mean(homes_after_1990$count) # ave number of foreclosures per year = 55.2381
 mean(homes_before_1990$count) # ave number of foreclosures per year = 91.9
@@ -226,14 +219,29 @@ summary(homes_after_1990)
 
 homes_per_year <- homes_built %>% summarise(count = n()) 
 
-homes_per_year_after_1950 <- homes_per_year %>% filter(YEAR_BUILT >= 1950)
+homes_1966 <- parcels %>% select(YEAR_BUILT) %>% filter(YEAR_BUILT <= 1965 & YEAR_BUILT >= 1940) %>% group_by(YEAR_BUILT) %>%  summarise(Number_of_Homes_built = n())
+
+homes_1968_1989 <- parcels %>% select(YEAR_BUILT) %>% filter(YEAR_BUILT <= 1991 & YEAR_BUILT >= 1966) %>% group_by(YEAR_BUILT) %>%  summarise(Number_of_Homes_built = n())
+
+homes_1990 <- parcels %>% select(YEAR_BUILT) %>% filter(YEAR_BUILT >= 1992) %>% group_by(YEAR_BUILT) %>%  summarise(Number_of_Homes_built = n())
+
 median(homes_per_year_after_1950$count)
 mean(homes_per_year_after_1950$count) # Avg number of homes built after 1950 338
+```   
+   
 
-  
-  
 
+Want to see what types of home were in foreclosure 
+```{r}
+home_type <- parcels %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT) %>% filter(YEAR_BUILT > 1) 
 
+Join <- home_type %>% right_join(foreclosure, by  = c("FULLADDRESS"))
+
+house_type <- Join %>% group_by(USE1_DESC ) %>% summarise(count = n()) %>% filter(USE1_DESC != "NA") %>% filter(USE1_DESC != "Commercial") %>% filter(USE1_DESC != "Industrial") %>% arrange(desc(count)) %>% rename(Home_Type = USE1_DESC) %>% rbind(., data.frame(Home_Type="Total", count=sum(.$count, na.rm=T)))
+
+town_home <- Join %>% filter(USE1_DESC == "Townhouse")
+
+homes_built <-  parcels %>% select(FULLADDRESS, USE1_DESC, YEAR_BUILT, Shape_Length, Shape_Area) %>% group_by(YEAR_BUILT) %>% filter(USE1_DESC == "Residential") %>% filter(YEAR_BUILT > 1) 
 ```
 
 
